@@ -1,247 +1,251 @@
-# **Cyber Threat Intelligence Analysis of Lazarus Group Using MISP**
 
-A full CTI lifecycle implementation using **MISP**, OSINT feeds, enrichment, automation, visualization, and alerting.
-This project simulates a real-world investigation of the **Lazarus Group**, a well-known state-sponsored APT involved in ransomware, banking theft, crypto attacks, and cyber espionage. 
+# **Cyber Threat Intelligence Analysis of the Lazarus Group Using MISP**
 
----
 
-## **1. Project Overview**
 
-This project demonstrates an end-to-end Cyber Threat Intelligence (CTI) workflow using the **Malware Information Sharing Platform (MISP)**.
-It includes:
+## **📌 1. Introduction**
 
-* Event creation & threat actor profiling
-* IOC extraction
-* Tagging & classification
-* OSINT feed integration
-* Python automation (feed parsing + statistics)
-* Email alerting via SMTP
+This project demonstrates the complete Cyber Threat Intelligence (CTI) lifecycle using **MISP (Malware Information Sharing Platform)**.
+It simulates a real-world investigation of the **Lazarus Group**, a well-known Advanced Persistent Threat (APT) associated with:
+
+* Ransomware operations
+* Financial theft
+* Cryptocurrency attacks
+* Espionage campaigns
+
+The project includes:
+
+* Event creation
+* Indicators of Compromise (IOC) collection
 * MITRE ATT&CK mapping
-* IP ASN enrichment
-* Grafana dashboard for live IOC visualization
-
-The target threat actor is the **Lazarus Group**. 
+* OSINT feed integration
+* Python automation
+* Threat statistics
+* Email notification system
+* Grafana visualization
+* Full documentation
 
 ---
 
-## **2. Tools & Environment**
+## **📌 2. Tools & Environment**
 
-**Platforms & Technologies Used:** 
+The analysis was conducted using:
 
 * **Kali Linux**
-* **Docker** (MISP deployed via containers)
-* **MISP**
-* **Python** (feed automation scripts)
-* **Prometheus + Grafana** for visualization
-* **SWAKS** for SMTP testing
-
-The environment simulates a real-life **Security Operations Center (SOC)** architecture.
+* **Docker**
+* **MISP** (deployed in Docker containers to simulate a SOC environment)
 
 ---
 
-## **3. Threat Actor Overview — Lazarus Group**
+## **📌 3. Threat Actor Overview — Lazarus Group**
 
-Lazarus is a **state-sponsored APT** known for:
+Lazarus is a **state-sponsored APT group** linked to major global incidents. Their activities include:
 
-* Ransomware campaigns
+* Ransomware distribution (e.g., Ryuk)
+* Banking credential theft
 * Cryptocurrency theft
-* Banking fraud
-* Cyber espionage
-* Large-scale destructive attacks
-
+* Long-term cyber espionage
 
 ---
 
-## **4. Event Creation in MISP**
+## **📌 4. Event Creation in MISP**
 
-A new MISP event was created to store all intelligence about Lazarus:
+A dedicated threat event was created with:
 
-* **Event Name:** *Lazarus Group – Financial & Ransomware Campaigns*
+* **Name:** *Lazarus Group – Financial & Ransomware Campaigns*
 * **Threat Level:** High
-* **Analysis:** Initial
+* **Analysis Level:** Initial
 * **Distribution:** Organization Only
 
-
-This event is the central container for all IOCs, enrichment, and OSINT data.
+This event serves as the main container for all intelligence related to Lazarus.
 
 ---
 
-## **5. Tagging & Classification**
+## **📌 5. Tagging, Classification & MITRE ATT&CK Mapping**
 
-Three key tags were applied: 
+### **5.1 Event Tags**
+
+The following classification tags were applied:
 
 * `threat-actor:lazarus-group`
 * `tlp:red`
 * `attack-type:ransomware`
+* `sector:finance`
+* `veris:actor:motive="Espionage"`
+* `veris:actor:motive="Financial"`
+* `c2-infrastructure`
 
-These tags enforce **classification**, **sensitivity**, and **threat categorization**.
+### **5.2 MITRE ATT&CK Galaxy Mappings**
 
----
+Four ATT&CK techniques were mapped:
 
-## **6. Indicators of Compromise (IOCs)**
+1. **Command Shell Execution**
+2. **T1059.003 – Windows Command Shell**
+3. **Credential Access from Browser Password Stores**
+4. **Server-Side Execution via SQL Stored Procedures**
 
-A total of **five** IOCs were added to the event: 
-
-| IOC Type     | Value                                                            |
-| ------------ | ---------------------------------------------------------------- |
-| IP Address   | 185.172.110.41                                                   |
-| IP Address   | 45.142.215.12                                                    |
-| Domain       | update-secure-login.com                                          |
-| Malware Name | Ryuk                                                             |
-| SHA-256 Hash | e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 |
-
-These represent attacker infrastructure & malware components.
+These mappings align Lazarus’ known behaviors with standardized ATT&CK techniques.
 
 ---
 
-## **7. OSINT Feed Integration**
+## **📌 6. ASN Enrichment (ipasn Module)**
 
-Enabled Feeds:
+The IP address **185.172.110.41**, associated with Lazarus operations, was enriched using the `ipasn` module.
+
+Added intelligence included:
+
+* **Last-seen timestamp**
+* **Autonomous System Number (ASN)**
+* **Announced subnet**
+
+This enriches context for:
+
+* Infrastructure attribution
+* Hosting analysis
+* Correlation with OSINT data
+* Monitoring and pivoting
+
+---
+
+## **📌 7. Indicators of Compromise (IOCs)**
+
+Five IOCs were added:
+
+1. **IP Address:** 185.172.110.41
+2. **Domain:** update-secure-login.com
+3. **Malware Name:** Ryuk
+4. **SHA256 Hash:** e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+5. **IP Address:** 45.142.215.12
+
+These represent attacker infrastructure, malware payloads, and C2 nodes.
+
+---
+
+## **📌 8. OSINT Feed Integration**
+
+Two external OSINT feeds were enabled:
 
 * **CIRCL OSINT Feed**
 * **Botvrij OSINT Feed**
 
+Due to background worker limitations, feeds were synchronized manually:
 
-Due to worker issues, feeds were synchronized manually using:
-
-```bash
+```
 ./app/Console/cake Server fetchFeed 1 all
 ```
 
-Warnings indicated duplicates — confirming **real feed data ingestion**.
+Warnings confirming previously existing events verified successful ingestion.
 
 ---
 
-## **8. Python Feed Parsing & Unification**
+## **📌 9. Python Feed Parsing & Unification**
 
-Two Python scripts were created:
+A Python script **feed_parser.py** was created to:
 
-1. **`feed_parser.py`** — Fetches OSINT feeds and generates a unified file:
+* Fetch multiple OSINT feeds
+* Unify them into a single JSON file
+* Save them as **unified_feeds.json**
 
-   * Output: `unified_feeds.json`
-2. **`feed_stats.py`** — Produces IOC statistics from unified feeds.
+This centralizes feed data for analysis.
 
+---
 
-**Statistics:**
+## **📌 10. Feed Statistics Generation**
 
-* CIRCL: 20 indicators
-* Botvrij: 20 indicators
+A second script **feed_stats.py** analyzed the unified feeds.
+
+Results:
+
+* **CIRCL indicators:** 20
+* **Botvrij indicators:** 20
 * **Total:** 40
 
----
-
-## **9. Email Alert System (SMTP)**
-
-MISP was configured to send alerts using **Gmail SMTP over TLS**.
-Testing done with **SWAKS** validated:
-
-* TLS handshake
-* Authentication success
-* Email delivery to analyst inbox
-
-
-Examples shown in the PDF confirm working alerting.
+These statistics verify successful parsing.
 
 ---
 
-## **10. MITRE ATT&CK Mapping**
+## **📌 11. Email Alert System (SMTP + SWAKS Testing)**
 
-Four ATT&CK techniques were added to the event: 
+MISP was configured to send **email alerts** using Gmail SMTP over TLS.
 
-1. **Command Shell Execution**
-2. **T1059.003 – Windows Command Shell**
-3. **Credentials from Password Stores (Web Browsers)**
-4. **SQL Stored Procedures**
+Validation was done using **SWAKS** inside the Docker container to confirm:
 
-Each technique aligns with known Lazarus behaviour in real intrusions.
+* Successful authentication
+* TLS negotiation
+* Message delivery
 
----
-
-## **11. ASN Enrichment (ipasn Module)**
-
-IOC enriched: **185.172.110.41**
-
-Enrichment added: 
-
-* Last-seen timestamps
-* ASN number
-* Announced subnet
-* Automatic ASN objects (2 versions)
-
-This adds **context**, attribution clues, and helps track attacker infrastructure.
+User notification settings were adjusted to ensure analysts receive alerts when events are published.
 
 ---
 
-## **12. Grafana Visualization of OSINT Feeds**
+## **📌 12. Grafana Visualization of OSINT Feed Statistics**
 
-A full monitoring stack was deployed:
+Grafana was integrated to visualize feed metrics using Prometheus.
 
-* **Python exporter → Prometheus → Grafana Dashboard**
+### **12.1 Why Grafana?**
 
+Grafana provides:
 
-Grafana displays:
+* SOC-style dashboards
+* Real-time feed monitoring
+* IOC trend visualization
+* Quick validation of automated pipelines
 
-* Total IOC count
-* CIRCL feed indicators (time-series)
-* Botvrij indicators (time-series)
+### **12.2 Data Source: Prometheus**
 
-**Example results:**
+Metrics retrieved:
 
-* CIRCL: 3
-* Botvrij: 2
-* Total: 5
+* `feed_indicators{feed="circl"}`
+* `feed_indicators{feed="botvrij"}`
+* `feed_indicators_total`
 
-These values matched Prometheus metrics precisely.
+### **12.3 Created Dashboard Panels**
+
+1. **Total Indicators (Stat Panel)**
+2. **CIRCL Indicators (Time-Series)**
+3. **Botvrij Indicators (Time-Series)**
+
+### **12.4 Visualization Results**
+
+* CIRCL Indicators: **3**
+* Botvrij Indicators: **2**
+* Total Indicators: **5**
+
+(Values matched the exporter metrics, confirming the pipeline.)
 
 ---
 
-## **13. Results & Analysis**
+## **📌 13. Results & Analysis**
 
-The project demonstrates:
+This project demonstrates:
 
-* Reuse of attacker infrastructure
-* Effective tagging & classification
-* Correlation between local IOCs and OSINT feeds
-* Improved attribution through enrichment
-* Real-time visualization of CTI metrics
+* Proper IOC management
+* Integration of OSINT feeds
+* Infrastructure correlation analysis
+* Threat attribution using MITRE ATT&CK
+* Automation through Python
+* Real-time visualization through Grafana
+* Fully operational email alerting
 
+It reflects how real SOCs manage and interpret threat intelligence.
 
 ---
 
-## **14. Conclusion**
+## **📌 14. Conclusion**
 
-This project successfully implements a **complete CTI lifecycle** using MISP:
+This project successfully implemented a complete **CTI workflow** using MISP.
+It covers:
 
 * Event creation
-* IOC extraction & enrichment
+* Tagging and classification
+* IOC extraction
 * Feed integration
-* Automation using Python
-* Statistics & data unification
-* Email alerting
-* ATT&CK mapping
+* Enrichment
+* Python automation
+* Statistical analysis
 * Grafana visualization
+* Documentation and reporting
 
-It represents a professional-grade simulation of real SOC threat intelligence workflows.
-
-
----
-
-## **15. Project Files**
-
-* `feed_parser.py`
-* `feed_stats.py`
-* `unified_feeds.json`
-* `README.md` (this file)
-
+The workflow mirrors professional CTI operations and demonstrates a mature understanding of threat intelligence practices.
 
 ---
-
-## **16. Authors**
-
-* Mahmoud Elmasry
-* **Sayed Helmy**
-* Eyad Mazhar
-* Mostafa Hatem
-* Mohamed Samy
-
-
